@@ -1,6 +1,8 @@
 #!/bin/bash
 
 cleanup() {
+    local device="$1"
+    
     echo "Graceful exit: Cleaning up..."
 
     # First rclone config session
@@ -23,12 +25,18 @@ EOF
         expect eof
 EOF
 
+    # Unmount the device after copying
+    sudo umount /dev/mapper/$device
+
+    # Close the encrypted volume
+    sudo cryptsetup luksClose $device
+
     echo "Process complete."
 }
 
 handle_interrupt() {
     echo "Detected Ctrl+C (SIGINT). Performing graceful exit..."
-    cleanup
+    cleanup "$device" "$passphrase"
     exit 1  # Optional: exit with a non-zero status to indicate interruption
 }
 
@@ -89,6 +97,7 @@ trap handle_interrupt SIGINT
 # Use rclone to copy files from remote " to the external drive
 echo "Starting file copy from remote..."
 rclone sync "remote:Let's eat something" ./folder --progress
+# rclone sync "remote:Let's eat something" /mnt/encrypted --progress
 
 # Check if rclone completed successfully
 if [ $? -eq 0 ]; then
@@ -97,11 +106,4 @@ else
     echo "rclone sync failed."
 fi
 
-# Unmount the device after copying
-sudo umount /dev/mapper/$device
-
-# Close the encrypted volume
-echo "$passphrase" | sudo cryptsetup luksClose $device
-
-
-cleanup
+cleanup "$device"
