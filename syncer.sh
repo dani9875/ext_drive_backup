@@ -1,5 +1,7 @@
 #!/bin/bash
 
+read -sp "Enter your rclone password: " PASSWORD
+
 cleanup() {
     local device="$1"
     
@@ -8,7 +10,7 @@ cleanup() {
     # First rclone config session
     expect <<EOF
         spawn rclone config
-        send "password\r"
+        send "$PASSWORD\r"
         send "s\r"
         send "u\r"
         send "q\r"
@@ -30,6 +32,8 @@ EOF
 
     # Close the encrypted volume
     sudo cryptsetup luksClose $device
+
+    rm -R ~/mount
 
     echo "Process complete."
 }
@@ -85,8 +89,8 @@ expect <<EOF
 spawn rclone config
 send "s\r"
 send "a\r"
-send "password\r"
-send "password\r"
+send "$PASSWORD\r"
+send "$PASSWORD\r"
 send "q\r"
 send "q\r"
 expect eof
@@ -97,7 +101,18 @@ trap handle_interrupt SIGINT
 
 # Use rclone to copy files from remote " to the external drive
 echo "Starting file copy from remote..."
-rclone sync "remote:Let's eat something" ~/mount/encrypted --progress
+# rclone sync "remote:Let's eat something" ~/mount/encrypted --progress
+
+# Get the full path of the directory where you want to sync
+SYNC_DIR="$HOME/mount/encrypted/Backup"
+
+# Run rclone sync command with expect, including password sending
+expect <<EOF
+spawn rclone sync "remote:Let's eat something" "$SYNC_DIR" --progress
+expect -timeout 10 "Enter configuration password:?"
+send "$PASSWORD\r"
+expect eof
+EOF
 
 # Check if rclone completed successfully
 if [ $? -eq 0 ]; then
