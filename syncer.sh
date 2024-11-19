@@ -55,15 +55,16 @@ echo "$passphrase" | sudo cryptsetup luksOpen "/dev/$device" "$device" || { echo
 echo "Device unlocked successfully."
 
 # Create the mount point if it doesn't exist
-sudo mkdir -p /mnt/encrypted
+mkdir -p ~/mount/encrypted
 
 # Mount the encrypted device
-sudo mount /dev/mapper/$device /mnt/encrypted
-
+sudo mount /dev/mapper/$device ~/mount/encrypted
+# Change ownership of the mounted files to the current user
+sudo chown -R $(id -u):$(id -g) ~/mount/encrypted
 
 expect <<EOF
 spawn rclone config
-expect "n/s/q>"
+expect -timeout 15 "n/s/q>"
 send "n\r"
 send "remote\r"
 send "drive\r"
@@ -96,8 +97,7 @@ trap handle_interrupt SIGINT
 
 # Use rclone to copy files from remote " to the external drive
 echo "Starting file copy from remote..."
-rclone sync "remote:Let's eat something" ./folder --progress
-# rclone sync "remote:Let's eat something" /mnt/encrypted --progress
+rclone sync "remote:Let's eat something" ~/mount/encrypted --progress
 
 # Check if rclone completed successfully
 if [ $? -eq 0 ]; then
