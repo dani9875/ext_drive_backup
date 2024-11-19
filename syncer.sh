@@ -108,7 +108,7 @@ SYNC_DIR="$HOME/mount/encrypted/Backup"
 
 # Run rclone sync command with expect, including password sending
 expect <<EOF
-spawn rclone sync "remote:Let's eat something" "$SYNC_DIR" --progress
+spawn rclone sync "remote:/" "$SYNC_DIR" --progress
 expect -timeout 10 "Enter configuration password:?"
 send "$PASSWORD\r"
 expect eof
