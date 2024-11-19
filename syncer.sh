@@ -99,20 +99,13 @@ EOF
 # Trap SIGINT (Ctrl+C) signal to call handle_interrupt function
 trap handle_interrupt SIGINT
 
-# Use rclone to copy files from remote " to the external drive
-echo "Starting file copy from remote..."
-# rclone sync "remote:Let's eat something" ~/mount/encrypted --progress
-
 # Get the full path of the directory where you want to sync
 SYNC_DIR="$HOME/mount/encrypted/Backup"
 
-# Run rclone sync command with expect, including password sending
-expect <<EOF
-spawn rclone sync "remote:/" "$SYNC_DIR" --progress
-expect -timeout 10 "Enter configuration password:?"
-send "$PASSWORD\r"
-expect eof
-EOF
+# Use rclone to copy files from remote " to the external drive
+echo "Starting file copy from remote..."
+echo "$PASSWORD" | rclone sync "remote:/" "$SYNC_DIR" --progress
+
 
 # Check if rclone completed successfully
 if [ $? -eq 0 ]; then
